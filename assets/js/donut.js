@@ -1,54 +1,79 @@
 (function () {
     var pretag = document.getElementById('donut');
     if (!pretag) return;
-    var canvas2d = document.getElementById('canvasdonut');
 
-    var tmr1 = undefined, tmr2 = undefined;
-    var A = 1, B = 1;
+    var tmr1 = undefined;
+    var A = 0, B = 0;
 
-    // This is the ASCII donut animation logic adapted from the C code
     var asciiframe = function () {
         var b = [];
         var z = [];
-        A += 0.07;
-        B += 0.03;
+        A += 0.05;
+        B += 0.02;
+        var r1 = 1; // Major radius
+        var r2 = 0.5; // Strip width
+
         var cA = Math.sin(A), sA = Math.cos(A),
             cB = Math.sin(B), sB = Math.cos(B);
+
         for (var k = 0; k < 1760; k++) {
             b[k] = k % 80 == 79 ? "\n" : " ";
             z[k] = 0;
         }
-        for (var j = 0; j < 6.28; j += 0.07) { // theta
-            var ct = Math.cos(j), st = Math.sin(j);
-            for (i = 0; i < 6.28; i += 0.02) { // phi
-                var sp = Math.sin(i), cp = Math.cos(i),
-                    h = ct + 2, // R1 + R2*cos(theta)
-                    D = 1 / (sp * h * sA + st * cA + 5), // this is similar to 1/z
-                    t = sp * h * cA - st * sA;
 
-                var x = 0 | (40 + 30 * D * (cp * h * sB - t * cB)),
-                    y = 0 | (12 + 15 * D * (cp * h * cB + t * sB)),
-                    o = x + 80 * y,
-                    N = 0 | (8 * ((st * sA - sp * ct * cA) * sB - sp * ct * sA - st * cA - cp * ct * cB));
+        // u goes around the strip (0 to 2pi)
+        for (var u = 0; u < 6.28; u += 0.07) {
+            var cu = Math.cos(u), su = Math.sin(u);
+            var cu2 = Math.cos(u / 2), su2 = Math.sin(u / 2);
 
-                if (y < 22 && y >= 0 && x >= 0 && x < 79 && D > z[o]) {
-                    z[o] = D;
-                    b[o] = ".,-~:;=!*#$@"[N > 0 ? N : 0];
+            // v goes across the strip (-r2 to r2)
+            for (var v = -r2; v < r2; v += 0.1) {
+                // Parametric equations for Möebius Strip
+                var x0 = (r1 + v * cu2) * cu;
+                var y0 = (r1 + v * cu2) * su;
+                var z0 = v * su2;
+
+                // Rotation around X axis (A)
+                var y1 = y0 * sA - z0 * cA;
+                var z1 = y0 * cA + z0 * sA;
+
+                // Rotation around Z axis (B)
+                var x2 = x0 * sB - y1 * cB;
+                var y2 = x0 * cB + y1 * sB;
+                var z2 = 5 + z1; // Offset Z for projection
+
+                var ooz = 1 / z2; // one over z
+
+                // Projection
+                var xp = 0 | (40 + 60 * ooz * x2);
+                var yp = 0 | (12 + 30 * ooz * y2);
+
+                // Normal vector calculation for lighting
+                // n = dp/du x dp/dv
+                // simplified normal for Möebius strip:
+                var nx = cu * su2;
+                var ny = su * su2;
+                var nz = -cu2;
+
+                // Apply same rotations to normal
+                var ny1 = ny * sA - nz * cA;
+                var nz1 = ny * cA + nz * sA;
+                var nx2 = nx * sB - ny1 * cB;
+                var ny2 = nx * cB + ny1 * sB;
+
+                // Luminance (dot product with light [0, 1, -1])
+                var L = ny2 - nz1;
+
+                var o = xp + 80 * yp;
+                if (yp < 22 && yp >= 0 && xp >= 0 && xp < 79 && ooz > z[o]) {
+                    z[o] = ooz;
+                    var N = 0 | (8 * L);
+                    b[o] = ".,-~:;=!*#$@"[N > 0 ? (N < 12 ? N : 11) : 0];
                 }
             }
         }
         pretag.innerHTML = b.join("");
     };
 
-    window.anim1 = function () {
-        if (tmr1) {
-            clearInterval(tmr1);
-            tmr1 = undefined;
-        } else {
-            tmr1 = setInterval(asciiframe, 50);
-        }
-    };
-
-    // Auto start
     tmr1 = setInterval(asciiframe, 50);
 })();
