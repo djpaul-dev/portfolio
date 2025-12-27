@@ -1,5 +1,6 @@
 (function () {
     var pretag = document.getElementById('donut');
+    if (!pretag) return;
     var canvas2d = document.getElementById('canvasdonut');
 
     var tmr1 = undefined, tmr2 = undefined;
