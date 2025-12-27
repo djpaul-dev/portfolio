@@ -16,18 +16,23 @@
         var cA = Math.sin(A), sA = Math.cos(A),
             cB = Math.sin(B), sB = Math.cos(B);
 
-        for (var k = 0; k < 1760; k++) {
-            b[k] = k % 80 == 79 ? "\n" : " ";
+        // Increased resolution
+        var width = 80;
+        var height = 40;
+        for (var k = 0; k < width * height; k++) {
+            b[k] = k % width == width - 1 ? "\n" : " ";
             z[k] = 0;
         }
 
         // u goes around the strip (0 to 2pi)
-        for (var u = 0; u < 6.28; u += 0.07) {
+        // Increased density for larger surface
+        for (var u = 0; u < 6.28; u += 0.04) {
             var cu = Math.cos(u), su = Math.sin(u);
             var cu2 = Math.cos(u / 2), su2 = Math.sin(u / 2);
 
             // v goes across the strip (-r2 to r2)
-            for (var v = -r2; v < r2; v += 0.1) {
+            // Increased density for larger surface
+            for (var v = -r2; v < r2; v += 0.05) {
                 // Parametric equations for Möebius Strip
                 var x0 = (r1 + v * cu2) * cu;
                 var y0 = (r1 + v * cu2) * su;
@@ -44,9 +49,9 @@
 
                 var ooz = 1 / z2; // one over z
 
-                // Projection
-                var xp = 0 | (40 + 60 * ooz * x2);
-                var yp = 0 | (12 + 30 * ooz * y2);
+                // Projection - Adjusted for larger buffer
+                var xp = 0 | (width / 2 + 100 * ooz * x2);
+                var yp = 0 | (height / 2 + 50 * ooz * y2);
 
                 // Normal vector calculation for lighting
                 // n = dp/du x dp/dv
@@ -64,8 +69,8 @@
                 // Luminance (dot product with light [0, 1, -1])
                 var L = ny2 - nz1;
 
-                var o = xp + 80 * yp;
-                if (yp < 22 && yp >= 0 && xp >= 0 && xp < 79 && ooz > z[o]) {
+                var o = xp + width * yp;
+                if (yp < height && yp >= 0 && xp >= 0 && xp < width - 1 && ooz > z[o]) {
                     z[o] = ooz;
                     var N = 0 | (8 * L);
                     b[o] = ".,-~:;=!*#$@"[N > 0 ? (N < 12 ? N : 11) : 0];
